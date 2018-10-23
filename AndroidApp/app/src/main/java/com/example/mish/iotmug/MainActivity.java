@@ -1,7 +1,13 @@
 package com.example.mish.iotmug;
 
+import android.Manifest;
+import android.content.Intent;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.PermissionChecker;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -27,6 +33,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET) != PermissionChecker.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.INTERNET}, 0);
+        }
     }
 
     public void setMugTemp(View view) {
@@ -46,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
         final TextView shutoffText = (TextView) findViewById(R.id.shutoffText);
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url ="http://IP HERE/temperature/";
+        String url = MugIP + "/temperature/";
 
         //make PUT request to ESP editing temperature with tempStr
         StringRequest stringRequest = new StringRequest(Request.Method.PUT, url,
@@ -82,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
         final TextView shutoffText = (TextView) findViewById(R.id.shutoffText);
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url ="http://IP HERE/state/";
+        String url = MugIP + "/state/";
 
         StringRequest refreshRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
@@ -90,14 +100,13 @@ public class MainActivity extends AppCompatActivity {
                     // need to receive and send real number signal
                     public void onResponse(String response) {
                         String[] responseComponents = response.split(" ");
-                        currentTemp.setText(responseComponents[0]);
-                        batteryLife.setText(responseComponents[1]);
-
-                        if(responseComponents[2] == "0") {
-                            shutoffText.setText("Emergency Shutoff Activated");
+                        currentTemp.setText(responseComponents[0] + "°C");
+                        batteryLife.setText(responseComponents[1] + "%");
+                        Log.e("SHUTOFF", responseComponents[2]);
+                        if(responseComponents[2].equals("0")) {
                             shutoffText.setVisibility(View.INVISIBLE);
                         }
-                        if(responseComponents[2] == "1") {
+                        else if(responseComponents[2].equals("1")) {
                             shutoffText.setText("Emergency Shutoff Activated");
                             shutoffText.setVisibility(View.VISIBLE);
                         }
@@ -124,6 +133,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void goToConnectScreen(View view) {
         //Send an intent to open the connect screen for connecting to a new Mug
+        Intent connectIP=new Intent(this,ConnectTabActivity.class);
+        startActivity(connectIP);
     }
 
     public void shutOff(View view) {
@@ -132,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
         final TextView shutoffText = (TextView) findViewById(R.id.shutoffText);
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "http://IP HERE/shutoff";
+        String url = MugIP + "/shutoff/";
         StringRequest shutoffRequest = new StringRequest(Request.Method.PUT, url,
                 new Response.Listener<String>() {
                     @Override
@@ -168,4 +179,6 @@ public class MainActivity extends AppCompatActivity {
     public void displayError(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
+
+    private String MugIP = "IP HERE";
 }
