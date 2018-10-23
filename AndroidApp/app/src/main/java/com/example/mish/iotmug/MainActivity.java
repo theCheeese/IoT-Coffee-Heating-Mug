@@ -1,5 +1,6 @@
 package com.example.mish.iotmug;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -124,52 +125,16 @@ public class MainActivity extends AppCompatActivity {
 
     public void goToConnectScreen(View view) {
         //Send an intent to open the connect screen for connecting to a new Mug
-        Intent IPconnect=new Intent(this,ConnectMugActivity.class);
-        startActivity (IPconnect);
+        Intent connectIP=new Intent(this,ConnectTabActivity.class);
+        startActivity(connectIP);
+
+
     }
 
     public void shutOff(View view) {
         //Send emergency shutoff signal, resettable by a button at the Mug itself for safety
 
         final TextView shutoffText = (TextView) findViewById(R.id.shutoffText);
-
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "http://IP HERE/shutoff";
-        StringRequest shutoffRequest = new StringRequest(Request.Method.PUT, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        findViewById(R.id.refreshButton).performClick(); //refresh state
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        shutoffText.setVisibility(View.VISIBLE);
-                        shutoffText.setText("Emergency Shutoff Failed, Please Push the Shutoff Button on the Mug!");
-                    }
-                })
-            {
-                @Override
-                protected Map<String, String> getParams() {
-                    Map<String, String> params = new HashMap<>();
-                    params.put("SHUTOFF", "1");
-                    return params;
-                }
-            };
-
-        queue.add(shutoffRequest);
-    }
-
-    public boolean validateMugTemp(String temperature) {
-        if(temperature.isEmpty()) return false;
-        int tempInt = Integer.parseInt(temperature);
-        return tempInt > 0 && tempInt < 70; //temperature must be between 0 and 70
-    }
-
-    public void displayError(String msg) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-    }
 
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = "http://IP HERE/shutoff";
