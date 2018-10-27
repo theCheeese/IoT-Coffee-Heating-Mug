@@ -6,14 +6,20 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class MugHistoryTab extends Fragment {
+import java.util.List;
+
+public class LocalMugsTab extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.connect_tab_mug_history, container, false);
+        View rootView = inflater.inflate(R.layout.connect_tab_local_mugs, container, false);
 
         return rootView;
     }
 
+    public void updateList(View view) {
+        //update list of wifi networks
+    }
 
+    private List<String> ssidList;
 }

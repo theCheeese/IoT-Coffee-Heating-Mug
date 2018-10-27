@@ -1,6 +1,10 @@
 package com.example.mish.iotmug;
 
+import android.Manifest;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.PermissionChecker;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -15,6 +19,15 @@ public class ConnectTabActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_connect_tab);
 
+        //ask for wifi permissions to check and connect to wifi
+        String[] permissions = {Manifest.permission.ACCESS_WIFI_STATE,
+                                Manifest.permission.CHANGE_WIFI_STATE};
+
+        for(String permission : permissions) {
+            if(ContextCompat.checkSelfPermission(this, permission) !=
+                    PermissionChecker.PERMISSION_GRANTED)
+                ActivityCompat.requestPermissions(this, permissions, 0); //if one permission isn't found request all
+        }
 
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
@@ -25,8 +38,8 @@ public class ConnectTabActivity extends AppCompatActivity {
         mViewPager.setAdapter(mSectionsPagerAdapter);             //set up a way to contain and switch tabs
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);          //set up the layout of the tabs
-        tabLayout.getTabAt(0).setText("Direct Connect");            //set tab titles
-        tabLayout.getTabAt(1).setText("Mug Shots (Previous Mugs)");
+        tabLayout.getTabAt(0).setText("Access Points");  //Mugs not connected to router show up as access points
+        tabLayout.getTabAt(1).setText("Local Mugs");     //Mugs connected to a router show up on the local network
 
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout)); //set listeners for tab switching
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
@@ -49,7 +62,7 @@ public class ConnectTabActivity extends AppCompatActivity {
                     ConnectMugTab tab1 = new ConnectMugTab();
                     return tab1;
                 case 1 :
-                    MugHistoryTab tab2 = new MugHistoryTab();
+                    LocalMugsTab tab2 = new LocalMugsTab();
                     return tab2;
                 default:
                     return null;
