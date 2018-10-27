@@ -22,7 +22,6 @@ import android.widget.Button;
 import java.util.ArrayList;
 import java.util.List;
 
-//TODO: prevent many broadcast receivers from being created when user presses button many times quickly
 //TODO: modify layout to display available access points
 //TODO: filter SSIDs of the available access points to only Mugs
 
