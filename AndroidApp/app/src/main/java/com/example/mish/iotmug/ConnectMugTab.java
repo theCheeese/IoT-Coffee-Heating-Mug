@@ -59,21 +59,22 @@ public class ConnectMugTab extends Fragment {
         wifiScanList.clear();
         ssidList.clear();
 
-        BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {  //define a broadcast receiver for wifi scan update intents
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                boolean scanSuccess = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false);
+        if(wifiScanReceiver == null) {
+            wifiScanReceiver = new BroadcastReceiver() {  //define a broadcast receiver for wifi scan update intents
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    boolean scanSuccess = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false);
 
-                if(scanSuccess) {
-                    Log.e("scan results", "scan success");
-                    wifiScanList = wifiService.getScanResults();
-                    updateWifiListLayout();                             //on scan success, update Layout
-                }
-                else
-                    Log.e("scan results", "unsuccessful scan");
+                    if (scanSuccess) {
+                        Log.e("scan results", "scan success");
+                        wifiScanList = wifiService.getScanResults();
+                        updateWifiListLayout();                             //on scan success, update Layout
+                    } else
+                        Log.e("scan results", "unsuccessful scan");
                     return;
-            }
-        };
+                }
+            };
+        }
 
         IntentFilter intentFilter = new IntentFilter();                     //filter intents to trigger broadcast receiver upon
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);  //newly available scan results
@@ -96,6 +97,7 @@ public class ConnectMugTab extends Fragment {
         }
     }
 
+    private BroadcastReceiver wifiScanReceiver;
     private List<ScanResult> wifiScanList;
     private List<String> ssidList;
 }
