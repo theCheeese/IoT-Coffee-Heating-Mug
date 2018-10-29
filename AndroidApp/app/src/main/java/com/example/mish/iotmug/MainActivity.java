@@ -181,5 +181,5 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
-    private String MugIP = "IP HERE";
+    private String MugIP = "http://192.168.1.154:8080";
 }

@@ -59,7 +59,7 @@ public class ConnectTabActivity extends AppCompatActivity {
         public Fragment getItem(int position) {
             switch (position) {
                 case 0:
-                    ConnectMugTab tab1 = new ConnectMugTab();
+                    MugSetupTab tab1 = new MugSetupTab();
                     return tab1;
                 case 1 :
                     LocalMugsTab tab2 = new LocalMugsTab();

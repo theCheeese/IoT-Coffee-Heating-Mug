@@ -1,23 +1,26 @@
 package com.example.mish.iotmug;
 import android.Manifest;
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
-import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.PermissionChecker;
+import android.text.Layout;
 import android.util.Log;
+import android.util.Xml;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import org.xmlpull.v1.XmlPullParser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,14 +28,15 @@ import java.util.List;
 //TODO: modify layout to display available access points
 //TODO: filter SSIDs of the available access points to only Mugs
 
-public class ConnectMugTab extends Fragment {
+public class MugSetupTab extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.connect_tab_access_points, container, false);
+        View rootView = inflater.inflate(R.layout.connect_tab_mug_setup, container, false);
 
         wifiScanList = new ArrayList<>();
         ssidList = new ArrayList<>();
+        wifiList = rootView.findViewById(R.id.wifiList);
 
         Button refreshButton = (Button) rootView.findViewById(R.id.refreshButton);
         refreshButton.setOnClickListener(new View.OnClickListener() {
@@ -94,9 +98,35 @@ public class ConnectMugTab extends Fragment {
             ssidList.add(wifiConfig.SSID);
             Log.e("SSID", wifiConfig.SSID);
         }
+
+        wifiList.removeAllViews();
+
+        for(ScanResult wifiConfig : wifiScanList) {
+            LayoutInflater layoutInflater = (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            LinearLayout wifiListMember = (LinearLayout) layoutInflater.inflate(R.layout.connect_tab_member_mug_access_point, null);
+            wifiList.addView(wifiListMember);
+
+            TextView wifiListMemberSsid = wifiListMember.findViewById(R.id.ssid);
+            wifiListMemberSsid.setText(wifiConfig.SSID);
+
+            Button connectButton = wifiList.findViewById(R.id.connectButton);
+            connectButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    connectToMug(v);
+                }
+            });
+        }
+
+    }
+
+    public void connectToMug(View view) {
+        //connect phone to chosen mug and direct to a setup view to connect mug to a wifi network. Return mug's IP to MainActivity?
     }
 
     private BroadcastReceiver wifiScanReceiver;
     private List<ScanResult> wifiScanList;
     private List<String> ssidList;
+
+    private LinearLayout wifiList;
 }
