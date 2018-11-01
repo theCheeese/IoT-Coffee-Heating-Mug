@@ -21,7 +21,9 @@ public class ConnectTabActivity extends AppCompatActivity {
 
         //ask for wifi permissions to check and connect to wifi
         String[] permissions = {Manifest.permission.ACCESS_WIFI_STATE,
-                                Manifest.permission.CHANGE_WIFI_STATE};
+                                Manifest.permission.CHANGE_WIFI_STATE,
+                                Manifest.permission.ACCESS_NETWORK_STATE,
+                                Manifest.permission.CHANGE_NETWORK_STATE};
 
         for(String permission : permissions) {
             if(ContextCompat.checkSelfPermission(this, permission) !=

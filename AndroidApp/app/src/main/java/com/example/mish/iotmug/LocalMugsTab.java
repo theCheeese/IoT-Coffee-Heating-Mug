@@ -1,5 +1,6 @@
 package com.example.mish.iotmug;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -21,5 +22,6 @@ public class LocalMugsTab extends Fragment {
         //update list of wifi networks
     }
 
+    private Context context;
     private List<String> ssidList;
 }

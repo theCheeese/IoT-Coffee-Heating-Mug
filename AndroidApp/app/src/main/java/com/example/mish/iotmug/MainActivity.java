@@ -1,6 +1,7 @@
 package com.example.mish.iotmug;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -37,6 +38,11 @@ public class MainActivity extends AppCompatActivity {
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET) !=
                 PermissionChecker.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.INTERNET}, 0);
+        }
+
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET) ==
+                PermissionChecker.PERMISSION_DENIED) {
+            //show error dialog saying the app needs internet access to function
         }
     }
 

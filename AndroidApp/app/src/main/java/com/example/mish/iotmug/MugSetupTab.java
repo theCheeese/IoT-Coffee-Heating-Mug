@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -19,16 +21,18 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.xmlpull.v1.XmlPullParser;
 
 import java.util.ArrayList;
 import java.util.List;
 
-//TODO: modify layout to display available access points
 //TODO: filter SSIDs of the available access points to only Mugs
+//TODO: connect phone to selected network and display setup page
 
 public class MugSetupTab extends Fragment {
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -37,6 +41,7 @@ public class MugSetupTab extends Fragment {
         wifiScanList = new ArrayList<>();
         ssidList = new ArrayList<>();
         wifiList = rootView.findViewById(R.id.wifiList);
+        context = getActivity().getApplicationContext();
 
         Button refreshButton = (Button) rootView.findViewById(R.id.refreshButton);
         refreshButton.setOnClickListener(new View.OnClickListener() {
@@ -53,6 +58,10 @@ public class MugSetupTab extends Fragment {
         if(ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_WIFI_STATE) !=
                 PermissionChecker.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CHANGE_WIFI_STATE) !=
+                PermissionChecker.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_NETWORK_STATE) !=
+                PermissionChecker.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CHANGE_NETWORK_STATE) !=
                 PermissionChecker.PERMISSION_GRANTED) {
             //show error message stating the app needs permissions to search for and connect to mugs
             return;
@@ -121,9 +130,98 @@ public class MugSetupTab extends Fragment {
     }
 
     public void connectToMug(View view) {
-        //connect phone to chosen mug and direct to a setup view to connect mug to a wifi network. Return mug's IP to MainActivity?
+        //get wifi ssid from the viewgroup button belongs to
+        ViewGroup wifiLayout = (ViewGroup) view.getParent();
+        TextView ssidView = wifiLayout.findViewById(R.id.ssid);
+        String currentSsid = ssidView.getText().toString();
+
+        //TODO: check if connection is a mug
+        //if not a mug, display an error and return
+
+        //set up a broadcast receiver to listen for wifi connections being made
+        final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        final WifiConfiguration connection = new WifiConfiguration();
+        connection.SSID = "\"" + currentSsid + "\"";
+
+        if(isSsidCurrentConnection(currentSsid)) {
+            Toast.makeText(context, "Already Connected to " + currentSsid, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        BroadcastReceiver wifiConnectionListener = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if(!isConnectedToNetwork()) return;
+
+                if(isSsidCurrentConnection(connection.SSID)) {
+                    wifiManager.addNetwork(connection);
+                    Toast.makeText(context, "Connected to " + connection.SSID, Toast.LENGTH_SHORT).show();
+                    //go to setup dialog or page
+                }
+                else {
+                    Toast.makeText(context, "Error connecting to " + connection.SSID, Toast.LENGTH_SHORT).show();
+                }
+            }
+        };
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        getActivity().registerReceiver(wifiConnectionListener, intentFilter);  //should this be an app-level receiver?
+
+        //if the chosen wifi is already configured, just connect
+        List<WifiConfiguration> wifiConfigurationList = wifiManager.getConfiguredNetworks();
+        for(WifiConfiguration configuredWifi : wifiConfigurationList) {
+            Log.e("Configured Connections", configuredWifi.SSID);
+            if(configuredWifi.SSID.equals(currentSsid)) {
+                wifiManager.enableNetwork(configuredWifi.networkId, true);
+                return;
+            }
+        }
+
+        //else, try to connect with a user-given password
+        for(ScanResult wifiConfig : wifiScanList) {
+            if(wifiConfig.SSID.equals(currentSsid)) {
+                String securityType = wifiConfig.capabilities;
+                if(securityType.contains("WPA2")) {
+                    connection.preSharedKey = "\"" + getWPA2Key() + "\"";
+                }
+                else if(securityType.contains("Open")) {
+                    connection.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+                }
+                else {
+                    Log.e("Connection Info", wifiConfig.toString());
+                    Log.e("Connection", "Invalid connection encryption type (mugs are configured only for WPA2 keys)");
+                    Toast.makeText(getContext(),
+                            "Connection error: wrong connection encryption type (only WPA2 is used in mugs)",
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+
+        wifiManager.enableNetwork(connection.networkId, true);
     }
 
+    private String getWPA2Key() {
+        String WPA2Key = "";
+        return WPA2Key;
+    }
+
+    private boolean isSsidCurrentConnection(String SSID) {
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        WifiInfo currentConnection = wifiManager.getConnectionInfo();
+        if(currentConnection != null && currentConnection.getSSID().equals(SSID))
+            return true;
+        else return false;
+    }
+
+    private boolean isConnectedToNetwork() {
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        WifiInfo currentConnection = wifiManager.getConnectionInfo();
+        if(currentConnection != null && currentConnection.getNetworkId() == -1)
+            return false;
+        else return true;
+    }
+
+    private Context context;
     private BroadcastReceiver wifiScanReceiver;
     private List<ScanResult> wifiScanList;
     private List<String> ssidList;
