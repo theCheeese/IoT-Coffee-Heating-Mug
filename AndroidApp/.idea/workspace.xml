@@ -67,8 +67,8 @@
       <file leaf-file-name="MugSetupTab.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/src/main/java/com/example/mish/iotmug/MugSetupTab.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="281">
-              <caret line="173" column="57" lean-forward="false" selection-start-line="173" selection-start-column="57" selection-end-line="173" selection-end-column="57" />
+            <state relative-caret-position="1406">
+              <caret line="146" column="77" lean-forward="false" selection-start-line="146" selection-start-column="77" selection-end-line="146" selection-end-column="77" />
               <folding>
                 <element signature="e#1642#1789#0" expanded="true" />
                 <element signature="e#1788#1789#0" expanded="true" />
@@ -76,8 +76,8 @@
                 <element signature="e#3631#3632#0" expanded="true" />
                 <element signature="e#5094#5263#0" expanded="true" />
                 <element signature="e#5262#5263#0" expanded="true" />
-                <element signature="e#6213#6853#0" expanded="true" />
-                <element signature="e#6852#6853#0" expanded="true" />
+                <element signature="e#6221#7412#0" expanded="true" />
+                <element signature="e#7411#7412#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -2668,7 +2668,6 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="410" y="0" width="1372" height="746" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info id="Android Profiler" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -2685,7 +2684,7 @@
       <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Build" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.22705314" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Build" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.22705314" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Device File Explorer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
@@ -2843,8 +2842,8 @@
             <element signature="e#3631#3632#0" expanded="true" />
             <element signature="e#5094#5263#0" expanded="true" />
             <element signature="e#5262#5263#0" expanded="true" />
-            <element signature="e#6213#6853#0" expanded="true" />
-            <element signature="e#6852#6853#0" expanded="true" />
+            <element signature="e#6221#7412#0" expanded="true" />
+            <element signature="e#7411#7412#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -2928,8 +2927,8 @@
             <element signature="e#3631#3632#0" expanded="true" />
             <element signature="e#5094#5263#0" expanded="true" />
             <element signature="e#5262#5263#0" expanded="true" />
-            <element signature="e#6213#6853#0" expanded="true" />
-            <element signature="e#6852#6853#0" expanded="true" />
+            <element signature="e#6221#7412#0" expanded="true" />
+            <element signature="e#7411#7412#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -3031,8 +3030,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app/src/main/java/com/example/mish/iotmug/MugSetupTab.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="281">
-          <caret line="173" column="57" lean-forward="false" selection-start-line="173" selection-start-column="57" selection-end-line="173" selection-end-column="57" />
+        <state relative-caret-position="1406">
+          <caret line="146" column="77" lean-forward="false" selection-start-line="146" selection-start-column="77" selection-end-line="146" selection-end-column="77" />
           <folding>
             <element signature="e#1642#1789#0" expanded="true" />
             <element signature="e#1788#1789#0" expanded="true" />
@@ -3040,8 +3039,8 @@
             <element signature="e#3631#3632#0" expanded="true" />
             <element signature="e#5094#5263#0" expanded="true" />
             <element signature="e#5262#5263#0" expanded="true" />
-            <element signature="e#6213#6853#0" expanded="true" />
-            <element signature="e#6852#6853#0" expanded="true" />
+            <element signature="e#6221#7412#0" expanded="true" />
+            <element signature="e#7411#7412#0" expanded="true" />
           </folding>
         </state>
       </provider>

@@ -143,8 +143,8 @@ public class MugSetupTab extends Fragment {
         final WifiConfiguration connection = new WifiConfiguration();
         connection.SSID = "\"" + currentSsid + "\"";
 
-        if(isSsidCurrentConnection(currentSsid)) {
-            Toast.makeText(context, "Already Connected to " + currentSsid, Toast.LENGTH_SHORT).show();
+        if(isSsidCurrentConnection(connection.SSID)) {
+            Toast.makeText(context, "Already Connected to " + connection.SSID, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -154,8 +154,17 @@ public class MugSetupTab extends Fragment {
                 if(!isConnectedToNetwork()) return;
 
                 if(isSsidCurrentConnection(connection.SSID)) {
-                    wifiManager.addNetwork(connection);
+                    boolean newWifiConnection = true;
+                    for(WifiConfiguration configuredWifi : wifiManager.getConfiguredNetworks()) {
+                        if(configuredWifi.SSID.equals(connection.SSID))
+                            newWifiConnection = false;
+                    }
+
+                    if(newWifiConnection)
+                        wifiManager.addNetwork(connection);
+                    Log.e("ConnectionNotification", "Made successful wifi connection");
                     Toast.makeText(context, "Connected to " + connection.SSID, Toast.LENGTH_SHORT).show();
+                    getActivity().unregisterReceiver(this); //prevent duplicate broadcast receivers from executing
                     //go to setup dialog or page
                 }
                 else {
@@ -170,8 +179,7 @@ public class MugSetupTab extends Fragment {
         //if the chosen wifi is already configured, just connect
         List<WifiConfiguration> wifiConfigurationList = wifiManager.getConfiguredNetworks();
         for(WifiConfiguration configuredWifi : wifiConfigurationList) {
-            Log.e("Configured Connections", configuredWifi.SSID);
-            if(configuredWifi.SSID.equals(currentSsid)) {
+            if(configuredWifi.SSID.equals(connection.SSID)) {
                 wifiManager.enableNetwork(configuredWifi.networkId, true);
                 return;
             }
@@ -179,7 +187,7 @@ public class MugSetupTab extends Fragment {
 
         //else, try to connect with a user-given password
         for(ScanResult wifiConfig : wifiScanList) {
-            if(wifiConfig.SSID.equals(currentSsid)) {
+            if(wifiConfig.SSID.equals(connection.SSID)) {
                 String securityType = wifiConfig.capabilities;
                 if(securityType.contains("WPA2")) {
                     connection.preSharedKey = "\"" + getWPA2Key() + "\"";
