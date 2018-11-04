@@ -43,7 +43,6 @@ public class MugSetupTab extends Fragment {
         View rootView = inflater.inflate(R.layout.connect_tab_mug_setup, container, false);
 
         wifiScanList = new ArrayList<>();
-        ssidList = new ArrayList<>();
         wifiList = rootView.findViewById(R.id.wifiList);
         context = getActivity().getApplicationContext();
 
@@ -73,9 +72,9 @@ public class MugSetupTab extends Fragment {
 
         final WifiManager wifiManager = (WifiManager) getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         wifiScanList.clear();
-        ssidList.clear();
         checkAndEnableWifi();
 
+        //set up BroadcastReceiver wifiScanReceiver to update the wifi network list layout after finishing scan
         if(wifiScanReceiver == null) {
             wifiScanReceiver = new BroadcastReceiver() {  //define a broadcast receiver for wifi scan update intents
                 @Override
@@ -91,11 +90,10 @@ public class MugSetupTab extends Fragment {
                     return;
                 }
             };
+            IntentFilter intentFilter = new IntentFilter();                     //filter intents to trigger broadcast receiver upon
+            intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);  //newly available scan results
+            getContext().registerReceiver(wifiScanReceiver, intentFilter);      //start listening
         }
-
-        IntentFilter intentFilter = new IntentFilter();                     //filter intents to trigger broadcast receiver upon
-        intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);  //newly available scan results
-        getContext().registerReceiver(wifiScanReceiver, intentFilter);      //start listening
 
         boolean successfulStartScan = wifiManager.startScan();              //start the scan
 
@@ -107,11 +105,6 @@ public class MugSetupTab extends Fragment {
 
     private void updateWifiListLayout() {
         if(wifiScanList == null) return;
-
-        for(ScanResult wifiConfig : wifiScanList) {
-            ssidList.add(wifiConfig.SSID);
-            Log.e("SSID", wifiConfig.SSID);
-        }
 
         wifiList.removeAllViews();
 
@@ -248,7 +241,6 @@ public class MugSetupTab extends Fragment {
     private Context context;
     private BroadcastReceiver wifiScanReceiver;
     private List<ScanResult> wifiScanList;
-    private List<String> ssidList;
 
     private LinearLayout wifiList;
 }
