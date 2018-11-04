@@ -29,7 +29,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 //TODO: filter SSIDs of the available access points to only Mugs
-//TODO: connect phone to selected network and display setup page
+//TODO: connect phone to selected network and display setup dialog/page
+//TODO: develop wifi network password authentication dialog
+//TODO: develop setup dialog/page
+//TODO; develop error dialogs for wifi network password authentication errors
+//TODO: develop error dialogs for denied app permissions
 
 public class MugSetupTab extends Fragment {
 
@@ -63,13 +67,14 @@ public class MugSetupTab extends Fragment {
                 PermissionChecker.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CHANGE_NETWORK_STATE) !=
                 PermissionChecker.PERMISSION_GRANTED) {
-            //show error message stating the app needs permissions to search for and connect to mugs
+            //TODO: show error message stating the app needs permissions to search for and connect to mugs
             return;
         }
 
-        final WifiManager wifiService = (WifiManager) getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        final WifiManager wifiManager = (WifiManager) getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         wifiScanList.clear();
         ssidList.clear();
+        checkAndEnableWifi();
 
         if(wifiScanReceiver == null) {
             wifiScanReceiver = new BroadcastReceiver() {  //define a broadcast receiver for wifi scan update intents
@@ -79,7 +84,7 @@ public class MugSetupTab extends Fragment {
 
                     if (scanSuccess) {
                         Log.e("scan results", "scan success");
-                        wifiScanList = wifiService.getScanResults();
+                        wifiScanList = wifiManager.getScanResults();
                         updateWifiListLayout();                             //on scan success, update Layout
                     } else
                         Log.e("scan results", "unsuccessful scan");
@@ -92,7 +97,7 @@ public class MugSetupTab extends Fragment {
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);  //newly available scan results
         getContext().registerReceiver(wifiScanReceiver, intentFilter);      //start listening
 
-        boolean successfulStartScan = wifiService.startScan();              //start the scan
+        boolean successfulStartScan = wifiManager.startScan();              //start the scan
 
         if(!successfulStartScan) {
             Log.e("scan results", "unsuccessful start scan");
@@ -130,6 +135,9 @@ public class MugSetupTab extends Fragment {
     }
 
     public void connectToMug(View view) {
+
+        checkAndEnableWifi();
+
         //get wifi ssid from the viewgroup button belongs to
         ViewGroup wifiLayout = (ViewGroup) view.getParent();
         TextView ssidView = wifiLayout.findViewById(R.id.ssid);
@@ -205,7 +213,9 @@ public class MugSetupTab extends Fragment {
             }
         }
 
+        //attempt a connection to chosen wifi network
         wifiManager.enableNetwork(connection.networkId, true);
+        //TODO: find a way to notify user if password authentication failed
     }
 
     private String getWPA2Key() {
@@ -227,6 +237,12 @@ public class MugSetupTab extends Fragment {
         if(currentConnection != null && currentConnection.getNetworkId() == -1)
             return false;
         else return true;
+    }
+
+    private void checkAndEnableWifi() {
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        if(!wifiManager.isWifiEnabled())
+            wifiManager.setWifiEnabled(true);
     }
 
     private Context context;
