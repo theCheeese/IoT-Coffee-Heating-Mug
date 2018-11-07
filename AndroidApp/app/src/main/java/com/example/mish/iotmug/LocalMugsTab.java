@@ -1,19 +1,24 @@
 package com.example.mish.iotmug;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.PermissionChecker;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.LinearLayout;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public class LocalMugsTab extends Fragment {
     @Override
@@ -24,6 +29,14 @@ public class LocalMugsTab extends Fragment {
         context = getActivity().getApplicationContext();
         deviceList = new ArrayList<>();
         deviceListLayout = rootView.findViewById(R.id.deviceListLayout);
+
+        Button searchForDevices = rootView.findViewById(R.id.buttonSearchForDevices);
+        searchForDevices.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                updateList(v);
+            }
+        });
 
         return rootView;
     }
@@ -53,6 +66,7 @@ public class LocalMugsTab extends Fragment {
     private Context context;
     private List<String> deviceList;
     private BroadcastReceiver deviceScanReceiver;
+    private ThreadPoolExecutor deviceScanThreadPool;
 
     private LinearLayout deviceListLayout;
 }

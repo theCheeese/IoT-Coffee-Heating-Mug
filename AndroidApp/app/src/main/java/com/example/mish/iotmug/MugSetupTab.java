@@ -1,7 +1,9 @@
 package com.example.mish.iotmug;
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
@@ -116,7 +118,7 @@ public class MugSetupTab extends Fragment {
             TextView wifiListMemberSsid = wifiListMember.findViewById(R.id.ssid);
             wifiListMemberSsid.setText(wifiConfig.SSID);
 
-            Button connectButton = wifiList.findViewById(R.id.connectButton);
+            Button connectButton = wifiListMember.findViewById(R.id.connectButton);
             connectButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -186,11 +188,14 @@ public class MugSetupTab extends Fragment {
             }
         }
 
+        Log.e("Connection", "Connection is a new configuration");
+
         //else, try to connect with a user-given password
         for(ScanResult wifiConfig : wifiScanList) {
-            if(wifiConfig.SSID.equals(connection.SSID)) {
+            if(wifiConfig.SSID.equals(currentSsid)) {
                 String securityType = wifiConfig.capabilities;
                 if(securityType.contains("WPA2")) {
+                    Log.e("Connection", "WPA2 security detected");
                     connection.preSharedKey = "\"" + getWPA2Key() + "\"";
                 }
                 else if(securityType.contains("Open")) {
@@ -206,12 +211,34 @@ public class MugSetupTab extends Fragment {
             }
         }
 
+        Log.e("Connection", "Attempting connection...");
+
         //attempt a connection to chosen wifi network
         wifiManager.enableNetwork(connection.networkId, true);
-        //TODO: find a way to notify user if password authentication failed
     }
 
     private String getWPA2Key() {
+        LayoutInflater layoutInflater = getLayoutInflater();
+        View passwordDialogView = layoutInflater.inflate(R.layout.dialog_wifi_password, null);
+
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+        dialogBuilder.setView(passwordDialogView)
+                .setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Toast.makeText(context, "getWPA2Key() working", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+
+        AlertDialog dialog = dialogBuilder.create();
+        dialog.show();
+
         String WPA2Key = "";
         return WPA2Key;
     }
