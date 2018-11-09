@@ -6,10 +6,14 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -21,6 +25,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,6 +41,12 @@ import java.util.List;
 //TODO: develop setup dialog/page
 //TODO; develop error dialogs for wifi network password authentication errors
 //TODO: develop error dialogs for denied app permissions
+
+//ISSUE: Apparently Network[] has many wifi networks, so we need a way to check that the wifi network we are switching to is the one we are checking our connectivity for
+//ISSUE: Errors don't pop up on connecting to wifi networks
+//ISSUE: Many Dialog boxes are possible. Create a way to check if a dialog is open, and then close it if a new one is requested
+//ISSUE: Code seems to try to connect to every wifi network that it has attempted, even unsuccessfully, before. It should forget past attempts
+//ISSUE: Toast messages firing off multiple times per connection attempt
 
 public class MugSetupTab extends Fragment {
 
@@ -156,22 +167,39 @@ public class MugSetupTab extends Fragment {
             public void onReceive(Context context, Intent intent) {
                 if(!isConnectedToNetwork()) return;
 
-                if(isSsidCurrentConnection(connection.SSID)) {
-                    boolean newWifiConnection = true;
-                    for(WifiConfiguration configuredWifi : wifiManager.getConfiguredNetworks()) {
-                        if(configuredWifi.SSID.equals(connection.SSID))
-                            newWifiConnection = false;
+                ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    Network[] networkArr = connectivityManager.getAllNetworks();
+                    for (Network n : networkArr) {
+                        NetworkInfo nInfo = connectivityManager.getNetworkInfo(n);
+                        if(nInfo.getTypeName().equalsIgnoreCase("wifi") &&
+                                isSsidCurrentConnection(connection.SSID) &&
+                                nInfo.getState() == NetworkInfo.State.CONNECTED) {
+                            Toast.makeText(context, "Connected to " + connection.SSID, Toast.LENGTH_SHORT).show();
+                            //go to Mug Setup View
+                            break;
+                        }
+                        else if(nInfo.getTypeName().equalsIgnoreCase("wifi") &&
+                                nInfo.getState() != NetworkInfo.State.CONNECTED) {
+                            Toast.makeText(context, "Error connecting to " + connection.SSID, Toast.LENGTH_SHORT).show();
+                        }
                     }
-
-                    if(newWifiConnection)
-                        wifiManager.addNetwork(connection);
-                    Log.e("ConnectionNotification", "Made successful wifi connection");
-                    Toast.makeText(context, "Connected to " + connection.SSID, Toast.LENGTH_SHORT).show();
-                    getActivity().unregisterReceiver(this); //prevent duplicate broadcast receivers from executing
-                    //go to setup dialog or page
                 }
-                else {
-                    Toast.makeText(context, "Error connecting to " + connection.SSID, Toast.LENGTH_SHORT).show();
+                else if(Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                    NetworkInfo[] networkInfoArr = connectivityManager.getAllNetworkInfo();     //deprecated but needed to support
+                    for(NetworkInfo nInfo : networkInfoArr) {
+                        if(nInfo.getTypeName().equalsIgnoreCase("wifi") &&
+                                isSsidCurrentConnection(connection.SSID) &&
+                                nInfo.getState() == NetworkInfo.State.CONNECTED) {
+                            Toast.makeText(context, "Connected to " + connection.SSID, Toast.LENGTH_SHORT).show();
+                            //go to Mug Setup View
+                            break;
+                        }
+                        else if(nInfo.getTypeName().equalsIgnoreCase("wifi") &&
+                                nInfo.getDetailedState() != NetworkInfo.DetailedState.CONNECTED) {
+                            Toast.makeText(context, "Error connecting to " + connection.SSID, Toast.LENGTH_SHORT).show();
+                        }
+                    }
                 }
             }
         };
@@ -179,7 +207,7 @@ public class MugSetupTab extends Fragment {
         intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
         getActivity().registerReceiver(wifiConnectionListener, intentFilter);  //should this be an app-level receiver?
 
-        //if the chosen wifi is already configured, just connect
+        //if the chosen wifi has already been configured, just connect using that
         List<WifiConfiguration> wifiConfigurationList = wifiManager.getConfiguredNetworks();
         for(WifiConfiguration configuredWifi : wifiConfigurationList) {
             if(configuredWifi.SSID.equals(connection.SSID)) {
@@ -196,7 +224,7 @@ public class MugSetupTab extends Fragment {
                 String securityType = wifiConfig.capabilities;
                 if(securityType.contains("WPA2")) {
                     Log.e("Connection", "WPA2 security detected");
-                    connection.preSharedKey = "\"" + getWPA2Key() + "\"";
+                    showWPA2Dialog(connection);
                 }
                 else if(securityType.contains("Open")) {
                     connection.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
@@ -217,30 +245,34 @@ public class MugSetupTab extends Fragment {
         wifiManager.enableNetwork(connection.networkId, true);
     }
 
-    private String getWPA2Key() {
+    private void showWPA2Dialog(final WifiConfiguration connection) {
+        final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         LayoutInflater layoutInflater = getLayoutInflater();
-        View passwordDialogView = layoutInflater.inflate(R.layout.dialog_wifi_password, null);
+        final View passwordDialogView = layoutInflater.inflate(R.layout.dialog_wifi_password, null);
 
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
         dialogBuilder.setView(passwordDialogView)
                 .setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        Toast.makeText(context, "getWPA2Key() working", Toast.LENGTH_SHORT).show();
+                        EditText passwordEditText = passwordDialogView.findViewById(R.id.passwordBox);
+                        String WPA2Key = passwordEditText.getText().toString();
+                        connection.preSharedKey = "\"" + WPA2Key + "\"";
+
+                        if(wifiManager.addNetwork(connection) != -1) {
+                            wifiManager.enableNetwork(connection.networkId, true);
+                        }
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-
+                        return;
                     }
                 });
 
         AlertDialog dialog = dialogBuilder.create();
         dialog.show();
-
-        String WPA2Key = "";
-        return WPA2Key;
     }
 
     private boolean isSsidCurrentConnection(String SSID) {
