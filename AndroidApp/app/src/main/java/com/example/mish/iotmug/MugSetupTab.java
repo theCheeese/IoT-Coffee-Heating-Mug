@@ -174,36 +174,34 @@ public class MugSetupTab extends Fragment {
                         Network[] networkArr = connectivityManager.getAllNetworks();
                         for (Network n : networkArr) {
                             NetworkInfo nInfo = connectivityManager.getNetworkInfo(n);
-                            if(nInfo.getTypeName().equalsIgnoreCase("wifi"))    //debug
-                                Log.e("Networks", nInfo.getExtraInfo() + ": " + nInfo.getDetailedState().toString()); //debug
+                            Log.e("Networks", nInfo.toString());
+
                             if (nInfo.getTypeName().equalsIgnoreCase("wifi") &&
                                     isSsidCurrentConnection(nInfo.getExtraInfo()) &&
                                     nInfo.getDetailedState() == NetworkInfo.DetailedState.CONNECTED) {
                                 Toast.makeText(context, "Connected to " + nInfo.getExtraInfo(), Toast.LENGTH_SHORT).show();
                                 //go to Mug Setup View
                                 break;
-                            } else if (nInfo.getTypeName().equalsIgnoreCase("wifi") &&
-                                    supplicantError == WifiManager.ERROR_AUTHENTICATING) {
-                                wifiManager.removeNetwork(connection.networkId);
-                                Toast.makeText(context, "Authentication Error connecting to " + nInfo.getExtraInfo(), Toast.LENGTH_SHORT).show();
                             }
                         }
+                        wifiManager.removeNetwork(connection.networkId);  //if wifi network not found in available networks, error
+                        Toast.makeText(context, "Authentication Error connecting to " + connection.SSID, Toast.LENGTH_SHORT).show();
                     }
                     else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
                         NetworkInfo[] networkInfoArr = connectivityManager.getAllNetworkInfo();     //deprecated but needed to support
                         for (NetworkInfo nInfo : networkInfoArr) {
+                            Log.e("Networks", nInfo.toString());
+
                             if (nInfo.getTypeName().equalsIgnoreCase("wifi") &&
                                     isSsidCurrentConnection(nInfo.getExtraInfo()) &&
                                     nInfo.getState() == NetworkInfo.State.CONNECTED) {
                                 Toast.makeText(context, "Connected to " + nInfo.getExtraInfo(), Toast.LENGTH_SHORT).show();
                                 //go to Mug Setup View
                                 break;
-                            } else if (nInfo.getTypeName().equalsIgnoreCase("wifi") &&
-                                    supplicantError == WifiManager.ERROR_AUTHENTICATING) {
-                                wifiManager.removeNetwork(connection.networkId);
-                                Toast.makeText(context, "Error connecting to " + nInfo.getExtraInfo(), Toast.LENGTH_SHORT).show();
                             }
                         }
+                        wifiManager.removeNetwork(connection.networkId);  //if wifi network not found in available networks, error
+                        Toast.makeText(context, "Authentication Error connecting to " + connection.SSID, Toast.LENGTH_SHORT).show();
                     }
                 }
             };
@@ -230,6 +228,15 @@ public class MugSetupTab extends Fragment {
                 String securityType = wifiConfig.capabilities;
                 if(securityType.contains("WPA2")) {
                     Log.e("Connection", "WPA2 security detected");
+                    connection.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
+                    connection.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
+                    connection.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+                    connection.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+                    connection.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
+                    connection.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
+                    connection.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP104);
+                    connection.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+                    connection.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
                     showWPA2Dialog(connection);
                 }
                 else if(securityType.contains("Open")) {
@@ -265,9 +272,14 @@ public class MugSetupTab extends Fragment {
                         String WPA2Key = passwordEditText.getText().toString();
                         connection.preSharedKey = "\"" + WPA2Key + "\"";
 
-                        if(wifiManager.addNetwork(connection) != -1) {
-                            wifiManager.enableNetwork(connection.networkId, true);
-                        }
+                        int netId = wifiManager.addNetwork(connection);
+                        //if(netId != -1) {
+                            boolean connectionSuccess = wifiManager.enableNetwork(connection.networkId, true);
+                         //   if(!connectionSuccess) {
+                           //     Toast.makeText(context, "Error Connecting to " + connection.SSID, Toast.LENGTH_SHORT).show();
+                             //   wifiManager.removeNetwork(netId);
+                          //  }
+                        //}
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
