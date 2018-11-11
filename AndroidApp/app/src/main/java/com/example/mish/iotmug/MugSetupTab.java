@@ -13,6 +13,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -32,18 +33,16 @@ import android.widget.Toast;
 
 import org.xmlpull.v1.XmlPullParser;
 
+import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Timer;
 
 //TODO: filter SSIDs of the available access points to only Mugs
-//TODO: connect phone to selected network and display setup dialog/page
-//TODO: develop wifi network password authentication dialog
 //TODO: develop setup dialog/page
-//TODO; develop error dialogs for wifi network password authentication errors
 //TODO: develop error dialogs for denied app permissions
 
-//ISSUE: Apparently Network[] has many wifi networks, so we need a way to check that the wifi network we are switching to is the one we are checking our connectivity for
-//ISSUE: Errors don't pop up on connecting to wifi networks
 //ISSUE: Many Dialog boxes are possible. Create a way to check if a dialog is open, and then close it if a new one is requested
 //ISSUE: Toast messages firing off multiple times per connection attempt
 
@@ -153,62 +152,12 @@ public class MugSetupTab extends Fragment {
 
         //set up a broadcast receiver to listen for wifi connections being made
         final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        final WifiConfiguration connection = new WifiConfiguration();
+        WifiConfiguration connection = new WifiConfiguration();
         connection.SSID = "\"" + currentSsid + "\"";
 
         if(isSsidCurrentConnection(connection.SSID)) {
             Toast.makeText(context, "Already Connected to " + connection.SSID, Toast.LENGTH_SHORT).show();
             return;
-        }
-
-        if (wifiConnectivityReceiver == null) {
-            wifiConnectivityReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    if (!isConnectedToNetwork()) return;
-
-                    ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-                    int supplicantError = intent.getIntExtra(WifiManager.EXTRA_SUPPLICANT_ERROR, -1);
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        Network[] networkArr = connectivityManager.getAllNetworks();
-                        for (Network n : networkArr) {
-                            NetworkInfo nInfo = connectivityManager.getNetworkInfo(n);
-                            Log.e("Networks", nInfo.toString());
-
-                            if (nInfo.getTypeName().equalsIgnoreCase("wifi") &&
-                                    isSsidCurrentConnection(nInfo.getExtraInfo()) &&
-                                    nInfo.getDetailedState() == NetworkInfo.DetailedState.CONNECTED) {
-                                Toast.makeText(context, "Connected to " + nInfo.getExtraInfo(), Toast.LENGTH_SHORT).show();
-                                //go to Mug Setup View
-                                break;
-                            }
-                        }
-                        wifiManager.removeNetwork(connection.networkId);  //if wifi network not found in available networks, error
-                        Toast.makeText(context, "Authentication Error connecting to " + connection.SSID, Toast.LENGTH_SHORT).show();
-                    }
-                    else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                        NetworkInfo[] networkInfoArr = connectivityManager.getAllNetworkInfo();     //deprecated but needed to support
-                        for (NetworkInfo nInfo : networkInfoArr) {
-                            Log.e("Networks", nInfo.toString());
-
-                            if (nInfo.getTypeName().equalsIgnoreCase("wifi") &&
-                                    isSsidCurrentConnection(nInfo.getExtraInfo()) &&
-                                    nInfo.getState() == NetworkInfo.State.CONNECTED) {
-                                Toast.makeText(context, "Connected to " + nInfo.getExtraInfo(), Toast.LENGTH_SHORT).show();
-                                //go to Mug Setup View
-                                break;
-                            }
-                        }
-                        wifiManager.removeNetwork(connection.networkId);  //if wifi network not found in available networks, error
-                        Toast.makeText(context, "Authentication Error connecting to " + connection.SSID, Toast.LENGTH_SHORT).show();
-                    }
-                }
-            };
-            IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-            intentFilter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
-            getActivity().registerReceiver(wifiConnectivityReceiver, intentFilter);  //should this be an app-level receiver?
         }
 
         //if the chosen wifi has already been configured, just connect using that
@@ -272,14 +221,37 @@ public class MugSetupTab extends Fragment {
                         String WPA2Key = passwordEditText.getText().toString();
                         connection.preSharedKey = "\"" + WPA2Key + "\"";
 
-                        int netId = wifiManager.addNetwork(connection);
-                        //if(netId != -1) {
-                            boolean connectionSuccess = wifiManager.enableNetwork(connection.networkId, true);
-                         //   if(!connectionSuccess) {
-                           //     Toast.makeText(context, "Error Connecting to " + connection.SSID, Toast.LENGTH_SHORT).show();
-                             //   wifiManager.removeNetwork(netId);
-                          //  }
-                        //}
+                        wifiManager.addNetwork(connection);
+
+                        if (wifiConnectivityReceiver == null) {
+                            wifiConnectivityReceiver = new WifiConnectionReceiver(context, connection);
+                        }
+
+                        wifiConnectivityReceiver.setWifiConfiguration(connection);
+                        context.registerReceiver(wifiConnectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+                        wifiManager.enableNetwork(connection.networkId, true);
+
+                        AsyncTask.execute(new Runnable() {
+                            public void run() {
+                                long startTime = System.currentTimeMillis();
+                                while (System.currentTimeMillis() < startTime + 10000) {
+                                    if (isConnectedToNetwork() && isSsidCurrentConnection(connection.SSID)) {      //check that we're connected for 10 seconds
+                                        Log.e("Timeout error checker", "wifi is connected");
+                                        return;
+                                    }
+                                }
+                                //after 10 seconds, generate a timeout error
+                                getActivity().runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(context, "Error Connecting to " + connection.SSID, Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                                wifiManager.removeNetwork(connection.networkId);
+                                wifiManager.disconnect();
+                                Log.e("Timeout error checker", "Connection timed out");
+                            }
+                        });
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -315,9 +287,13 @@ public class MugSetupTab extends Fragment {
             wifiManager.setWifiEnabled(true);
     }
 
+    private void displayToast(String message) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+    }
+
     private Context context;
     private BroadcastReceiver wifiScanReceiver;
-    private BroadcastReceiver wifiConnectivityReceiver;
+    private WifiConnectionReceiver wifiConnectivityReceiver;
     private List<ScanResult> wifiScanList;
 
     private LinearLayout wifiList;
