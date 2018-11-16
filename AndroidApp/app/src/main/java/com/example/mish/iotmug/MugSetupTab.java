@@ -77,7 +77,7 @@ public class MugSetupTab extends Fragment {
                 PermissionChecker.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CHANGE_NETWORK_STATE) !=
                 PermissionChecker.PERMISSION_GRANTED) {
-            //TODO: show error message stating the app needs permissions to search for and connect to mugs
+            //TODO: show error message stating the app needs permissions to search for and connect to Wifi access points
             return;
         }
 
@@ -148,17 +148,17 @@ public class MugSetupTab extends Fragment {
         String currentSsid = ssidView.getText().toString();
 
         //TODO: check if connection is a mug
-        //if not a mug, display an error and return
+        //if not a mug, continue
+        //else set boolean isMug true, continue as usual, and then open a WebView in another Activity to associate the mug to user's personal wifi access point
 
-        //set up a broadcast receiver to listen for wifi connections being made
+        if(isSsidCurrentConnection("\"" + currentSsid + "\"")) {
+            Toast.makeText(context, "Already Connected to \"" + currentSsid + "\"", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         WifiConfiguration connection = new WifiConfiguration();
         connection.SSID = "\"" + currentSsid + "\"";
-
-        if(isSsidCurrentConnection(connection.SSID)) {
-            Toast.makeText(context, "Already Connected to " + connection.SSID, Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         //if the chosen wifi has already been configured, just connect using that
         List<WifiConfiguration> wifiConfigurationList = wifiManager.getConfiguredNetworks();

@@ -29,7 +29,7 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
         if(intent.getAction().equals(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION)) {
             SupplicantState supplicantState = (SupplicantState) intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE);
             switch(supplicantState) {
-                case ASSOCIATED:
+                case COMPLETED:
                     //check if we're associated with the network we wanna connect to
                     WifiInfo currentConnection = wifiManager.getConnectionInfo();
                     String currentSSID = currentConnection.getSSID();
