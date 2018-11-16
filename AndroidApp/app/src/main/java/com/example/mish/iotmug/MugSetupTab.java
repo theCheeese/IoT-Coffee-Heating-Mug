@@ -10,6 +10,7 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
+import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -44,7 +45,6 @@ import java.util.Timer;
 //TODO: develop error dialogs for denied app permissions
 
 //ISSUE: Many Dialog boxes are possible. Create a way to check if a dialog is open, and then close it if a new one is requested
-//ISSUE: Toast messages firing off multiple times per connection attempt
 
 public class MugSetupTab extends Fragment {
 
@@ -190,6 +190,10 @@ public class MugSetupTab extends Fragment {
                 }
                 else if(securityType.contains("Open")) {
                     connection.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+                    int netId = wifiManager.addNetwork(connection);
+                    Log.e("Network ID open", Integer.toString(netId));
+                    wifiManager.enableNetwork(netId, true);
+
                 }
                 else {
                     Log.e("Connection Info", wifiConfig.toString());
@@ -200,11 +204,6 @@ public class MugSetupTab extends Fragment {
                 }
             }
         }
-
-        Log.e("Connection", "Attempting connection...");
-
-        //attempt a connection to chosen wifi network
-        wifiManager.enableNetwork(connection.networkId, true);
     }
 
     private void showWPA2Dialog(final WifiConfiguration connection) {
@@ -221,37 +220,17 @@ public class MugSetupTab extends Fragment {
                         String WPA2Key = passwordEditText.getText().toString();
                         connection.preSharedKey = "\"" + WPA2Key + "\"";
 
-                        wifiManager.addNetwork(connection);
+                        int netId = wifiManager.addNetwork(connection);
 
                         if (wifiConnectivityReceiver == null) {
-                            wifiConnectivityReceiver = new WifiConnectionReceiver(context, connection);
+                            wifiConnectivityReceiver = new WifiConnectionReceiver(context);
                         }
 
-                        wifiConnectivityReceiver.setWifiConfiguration(connection);
-                        context.registerReceiver(wifiConnectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
-                        wifiManager.enableNetwork(connection.networkId, true);
-
-                        AsyncTask.execute(new Runnable() {
-                            public void run() {
-                                long startTime = System.currentTimeMillis();
-                                while (System.currentTimeMillis() < startTime + 10000) {
-                                    if (isConnectedToNetwork() && isSsidCurrentConnection(connection.SSID)) {      //check that we're connected for 10 seconds
-                                        Log.e("Timeout error checker", "wifi is connected");
-                                        return;
-                                    }
-                                }
-                                //after 10 seconds, generate a timeout error
-                                getActivity().runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(context, "Error Connecting to " + connection.SSID, Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                                wifiManager.removeNetwork(connection.networkId);
-                                wifiManager.disconnect();
-                                Log.e("Timeout error checker", "Connection timed out");
-                            }
-                        });
+                        wifiConnectivityReceiver.setSSID(connection.SSID);
+                        wifiConnectivityReceiver.setNetId(netId);
+                        context.registerReceiver(wifiConnectivityReceiver, new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION));
+                        wifiManager.enableNetwork(netId, true);
+                        Toast.makeText(context, "Connecting...", Toast.LENGTH_LONG).show();
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -268,27 +247,16 @@ public class MugSetupTab extends Fragment {
     private boolean isSsidCurrentConnection(String SSID) {
         WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         WifiInfo currentConnection = wifiManager.getConnectionInfo();
-        if(currentConnection != null && currentConnection.getSSID().equals(SSID))
+        if(currentConnection != null &&
+                currentConnection.getSSID().equals(SSID))
             return true;
         else return false;
-    }
-
-    private boolean isConnectedToNetwork() {
-        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        WifiInfo currentConnection = wifiManager.getConnectionInfo();
-        if(currentConnection != null && currentConnection.getNetworkId() == -1)
-            return false;
-        else return true;
     }
 
     private void checkAndEnableWifi() {
         WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         if(!wifiManager.isWifiEnabled())
             wifiManager.setWifiEnabled(true);
-    }
-
-    private void displayToast(String message) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
     }
 
     private Context context;
