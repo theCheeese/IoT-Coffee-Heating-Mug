@@ -7,118 +7,131 @@
     tools:context=".MainActivity">
 
     <Button
-        android:id="@+id/Set"
-        android:layout_width="wrap_content"
+        android:id="@+id/setTempButton"
+        android:layout_width="91dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginEnd="60dp"
-        android:layout_marginRight="60dp"
-        android:layout_marginBottom="36dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginRight="32dp"
         android:onClick="setMugTemp"
         android:text="Set temp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/button2"
-        android:layout_width="94dp"
-        android:layout_height="47dp"
-        android:layout_marginEnd="60dp"
-        android:layout_marginRight="60dp"
-        android:layout_marginBottom="32dp"
-        android:onClick="shutOff"
-        android:text="Shut off"
-        app:layout_constraintBottom_toTopOf="@+id/Set"
         app:layout_constraintEnd_toEndOf="parent" />
 
     <Button
-        android:id="@+id/Refresh"
+        android:id="@+id/shutOffButton"
+        android:layout_width="94dp"
+        android:layout_height="47dp"
+        android:layout_marginBottom="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginRight="32dp"
+        android:onClick="shutOff"
+        android:text="Shut off"
+        app:layout_constraintBottom_toTopOf="@+id/setTempButton"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/refreshButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
+        android:layout_marginBottom="16dp"
         android:layout_marginLeft="32dp"
-        android:layout_marginTop="32dp"
-        android:layout_marginEnd="264dp"
-        android:layout_marginRight="264dp"
-        android:layout_marginBottom="36dp"
+        android:layout_marginStart="32dp"
         android:onClick="sendRefreshStateRequest"
         android:text="Refresh"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/connectIP" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <EditText
-        android:id="@+id/editTemp"
+        android:id="@+id/setTemp"
         android:layout_width="119dp"
         android:layout_height="39dp"
-        android:layout_marginStart="28dp"
-        android:layout_marginLeft="28dp"
-        android:layout_marginBottom="276dp"
+        android:layout_marginLeft="32dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="12dp"
         android:ems="10"
         android:inputType="number"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/setTempLabel" />
 
     <TextView
         android:id="@+id/currentTemp"
-        android:layout_width="156dp"
-        android:layout_height="17dp"
-        android:layout_marginStart="32dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginLeft="32dp"
-        android:layout_marginTop="28dp"
-        android:layout_marginEnd="294dp"
-        android:layout_marginRight="294dp"
-        android:text="TextView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="12dp"
+        android:text="xx°C"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+    <TextView
+        android:id="@+id/batteryLife"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="32dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="12dp"
+        android:text="xx%"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/batteryLifeLabel" />
+
+    <TextView
+        android:id="@+id/setTempLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="32dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="24dp"
+        android:text="Set Temperature:"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/batteryLife" />
+
+    <Button
+        android:id="@+id/connectMug"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:layout_marginLeft="32dp"
+        android:layout_marginStart="32dp"
+        android:onClick="goToConnectScreen"
+        android:text="Connect Mug"
+        app:layout_constraintBottom_toTopOf="@+id/refreshButton"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="16dp"
+        android:layout_marginLeft="32dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="16dp"
+        android:text="Current Temperature:"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/batteryPower"
-        android:layout_width="156dp"
-        android:layout_height="17dp"
-        android:layout_marginStart="32dp"
+        android:id="@+id/batteryLifeLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginLeft="32dp"
-        android:layout_marginTop="28dp"
-        android:layout_marginEnd="294dp"
-        android:layout_marginRight="294dp"
-        android:text="TextView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="24dp"
+        android:text="Mug Battery Life:"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/currentTemp" />
 
     <TextView
-        android:id="@+id/setTemp"
-        android:layout_width="156dp"
-        android:layout_height="17dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginLeft="32dp"
-        android:layout_marginTop="28dp"
-        android:layout_marginEnd="294dp"
-        android:layout_marginRight="294dp"
-        android:text="TextView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/batteryPower" />
-
-    <Button
-        android:id="@+id/connectIP"
-        android:layout_width="wrap_content"
+        android:id="@+id/shutoffText"
+        android:layout_width="144dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginLeft="32dp"
-        android:layout_marginTop="112dp"
-        android:onClick="goToConnectScreen"
-        android:text="Connect Ip"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editTemp" />
+        android:layout_marginEnd="32dp"
+        android:layout_marginRight="32dp"
+        android:layout_marginTop="16dp"
+        android:autoSizeTextType="uniform"
+        android:text="Emergency Shutoff"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </android.support.constraint.ConstraintLayout>
