@@ -68,13 +68,6 @@ public class MugSetupTab extends Fragment {
         return rootView;
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        if(context.)
-            context.unregisterReceiver(wifiConnectivityReceiver);
-    }
-
     public void updateList(View view) {
         if(ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_WIFI_STATE) !=
                 PermissionChecker.PERMISSION_GRANTED ||
