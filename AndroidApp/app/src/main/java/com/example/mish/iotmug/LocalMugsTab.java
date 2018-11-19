@@ -17,13 +17,18 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class LocalMugsTab extends Fragment {
     @Override
@@ -32,8 +37,11 @@ public class LocalMugsTab extends Fragment {
         View rootView = inflater.inflate(R.layout.connect_tab_local_mugs, container, false);
 
         context = getActivity().getApplicationContext();
-        deviceList = new CopyOnWriteArrayList<>();
+        deviceList = new ArrayList<>();
         deviceListLayout = rootView.findViewById(R.id.deviceListLayout);
+
+        deviceScanThreadPool = new ThreadPoolExecutor(0, MAX_THREADS, 500, TimeUnit.MILLISECONDS,
+                new ArrayBlockingQueue<Runnable>(MAX_THREADS/NUM_IPS_TO_CHECK));
 
         Button searchForDevices = rootView.findViewById(R.id.buttonSearchForDevices);
         searchForDevices.setOnClickListener(new View.OnClickListener() {
@@ -53,71 +61,22 @@ public class LocalMugsTab extends Fragment {
             return;
         }
 
-        //set up a broadcast receiver deviceScanReceiver to update layout listing all devices on the network once scanning is finished
-        //create a threadpool that scans for local network devices by local IP
-        //execute the threadpool and send the action that triggers deviceScanReceiver
-        AsyncTask.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (int i =0; i<255;i++){
-                    long startTime = System.currentTimeMillis();
-                    try {
-                        final InetAddress currentIP = InetAddress.getByName("192.168.1." + i);
-                        if (currentIP.isReachable(100)) {
-                            final int n = i;
-                            final long latency = System.currentTimeMillis() - startTime;
-                            final String hostname = currentIP.getCanonicalHostName();
-                            getActivity().runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(context,  hostname + " is reachable within" + latency + " ms latency", Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                        }
-                    }
-                    catch(UnknownHostException e) {
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(context,"Error: Unknown Host!",Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                    catch(IOException d){
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(context,"IO Exception caught!",Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                }
-            }
-        });
+        //submit tasks into separate threads that scan for local network devices by local IP in groups of NUM_IPS_TO_CHECK
+
+        List< Future<List<InetAddress>> > threadResults = new ArrayList<>();
 
 
-
-        //set up a broadcast receiver deviceScanReceiver to update layout listing all devices on the network once scanning is finished
-        //create a threadpool that scans for local network devices by local IP
-        //execute the threadpool and send the action that triggers deviceScanReceiver
-
-    }
-    public void  ipPinger() {
-        for (int i =0; i<255;i++){
-            long startTime = System.currentTimeMillis();
-            try {
-                if (InetAddress.getByName("192.168.1." + i).isReachable(100)) {
-                    long latency = System.currentTimeMillis() - startTime;
-                    Toast.makeText(context, "192.168.1." + i + " is reachable within" + latency + " ms latency", Toast.LENGTH_SHORT).show();
-                }
-            }
-            catch(UnknownHostException e) {
-                Toast.makeText(context,"Error",Toast.LENGTH_SHORT).show();
-            }
-            catch(IOException d){
-                Toast.makeText(context,"Error 2",Toast.LENGTH_SHORT).show();
-            }
+        for(int startIpNum = 1; startIpNum < 255; startIpNum+=NUM_IPS_TO_CHECK) {
+            Future< List<InetAddress> > reachableIPSubgroup = deviceScanThreadPool.submit(new PingCallable(NUM_IPS_TO_CHECK, startIpNum, context, getActivity()));
+            threadResults.add(reachableIPSubgroup);
         }
+
+        for(Future< List<InetAddress> > reachableIPSubgroup : threadResults) {
+            //TODO: Combine all thread results into deviceList as an AsyncTask
+            //TODO: (so that the UI thread doesn't have to wait for the threads to finish)
+        }
+
+        //TODO: render device list into deviceListLayout
 
     }
 
@@ -135,8 +94,11 @@ public class LocalMugsTab extends Fragment {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
     }
 
+    private final int MAX_THREADS = 255;
+    private final int NUM_IPS_TO_CHECK = 5;
+
     private Context context;
-    private CopyOnWriteArrayList<String> deviceList;
+    private List<String> deviceList;
     private BroadcastReceiver deviceScanReceiver;
     private ThreadPoolExecutor deviceScanThreadPool;
 
