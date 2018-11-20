@@ -20,12 +20,14 @@ import android.widget.Toast;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -40,7 +42,7 @@ public class LocalMugsTab extends Fragment {
         deviceList = new ArrayList<>();
         deviceListLayout = rootView.findViewById(R.id.deviceListLayout);
 
-        deviceScanThreadPool = new ThreadPoolExecutor(0, MAX_THREADS, 500, TimeUnit.MILLISECONDS,
+        deviceScanThreadPool = new ThreadPoolExecutor(NUM_IPS_TO_CHECK, MAX_THREADS, 500, TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<Runnable>(MAX_THREADS/NUM_IPS_TO_CHECK));
 
         Button searchForDevices = rootView.findViewById(R.id.buttonSearchForDevices);
@@ -61,23 +63,44 @@ public class LocalMugsTab extends Fragment {
             return;
         }
 
+        deviceList.clear();
+
         //submit tasks into separate threads that scan for local network devices by local IP in groups of NUM_IPS_TO_CHECK
-
-        List< Future<List<InetAddress>> > threadResults = new ArrayList<>();
-
+        final List< Future<List<InetAddress>> > threadResults = new ArrayList<>();
 
         for(int startIpNum = 1; startIpNum < 255; startIpNum+=NUM_IPS_TO_CHECK) {
-            Future< List<InetAddress> > reachableIPSubgroup = deviceScanThreadPool.submit(new PingCallable(NUM_IPS_TO_CHECK, startIpNum, context, getActivity()));
-            threadResults.add(reachableIPSubgroup);
+            Future< List<InetAddress> > futureReachableIPSubgroup = deviceScanThreadPool.submit(new PingCallable(NUM_IPS_TO_CHECK, startIpNum, context, getActivity()));
+            threadResults.add(futureReachableIPSubgroup);
         }
+        //TODO: figure out how to combine both these tasks into one thread-safely
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    for(Future< List<InetAddress> > futureReachableIPSubgroup : threadResults) {
+                        List<InetAddress> reachableIPSubgroup = futureReachableIPSubgroup.get();
+                        if (!reachableIPSubgroup.isEmpty()) {
+                            deviceList.addAll(reachableIPSubgroup);
+                        }
+                    }
+                }
+                catch(InterruptedException e) {
+                    Log.e("Interrupted Exception", e.getMessage());
+                    e.printStackTrace();
+                }
+                catch(ExecutionException e) {
+                    Log.e("Execution Exception", e.getMessage());
+                    e.printStackTrace();
+                }
 
-        for(Future< List<InetAddress> > reachableIPSubgroup : threadResults) {
-            //TODO: Combine all thread results into deviceList as an AsyncTask
-            //TODO: (so that the UI thread doesn't have to wait for the threads to finish)
-        }
-
-        //TODO: render device list into deviceListLayout
-
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        renderDeviceList();
+                    }
+                });
+            }
+        });
     }
 
     public void connectToDevice() {
@@ -90,16 +113,21 @@ public class LocalMugsTab extends Fragment {
         //if correct, return the IP address and name of the mug to MainActivity for interaction
     }
 
-    private void writeToast(String message) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+    private void renderDeviceList() {
+        if(deviceList.isEmpty()) {
+            Toast.makeText(context, "No devices found on this network!", Toast.LENGTH_SHORT).show();
+        }
+        for(InetAddress device : deviceList) {
+            Log.e("Device", device.getHostAddress());
+            Toast.makeText(context, "Device: " + device.getHostAddress(), Toast.LENGTH_SHORT).show();
+        }
     }
 
-    private final int MAX_THREADS = 255;
-    private final int NUM_IPS_TO_CHECK = 5;
+    private final int MAX_THREADS = 300;
+    private final int NUM_IPS_TO_CHECK = 15;
 
     private Context context;
-    private List<String> deviceList;
-    private BroadcastReceiver deviceScanReceiver;
+    private List<InetAddress> deviceList;
     private ThreadPoolExecutor deviceScanThreadPool;
 
     private LinearLayout deviceListLayout;

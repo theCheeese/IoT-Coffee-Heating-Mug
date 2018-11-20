@@ -2,6 +2,7 @@ package com.example.mish.iotmug;
 
 import android.app.Activity;
 import android.content.Context;
+import android.util.Log;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -23,11 +24,14 @@ public class PingCallable implements Callable<List<InetAddress>> {
     public List<InetAddress> call() {
         List<InetAddress> reachableIPs = new ArrayList<>();
 
-        for (int i = startIpNum; i < startIpNum + numIPsToCheck; i++) {
+        Log.e("PingCallable", "Called on startIP " + startIpNum + " and " + numIPsToCheck + " IPs to check");
+
+        for (int i = startIpNum; (i < startIpNum + numIPsToCheck) && (i < 255); i++) {
             try {
                 final InetAddress currentIP = InetAddress.getByName("192.168.1." + i);
-                if (currentIP.isReachable(100)) {
+                if (currentIP.isReachable(300)) {
                     reachableIPs.add(currentIP);
+                    Log.e("PingCallable", "Found reachable IP on " + currentIP.getHostAddress());
                 }
             } catch (UnknownHostException e) {
                 currentActivity.runOnUiThread(new Runnable() {
