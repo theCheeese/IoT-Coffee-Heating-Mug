@@ -1,10 +1,12 @@
 package com.example.mish.iotmug;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -16,6 +18,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -31,6 +34,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+//TODO: When the hardware for the Mug prototype is finished, use an HTTP request instead of pings so that we can find out if the local device is a Mug or not
+//TODO: Speed up the local device search
+//TODO: List host names of the Mugs instead of the bare IP
+//TODO: Develop error dialogs for missing app permissions
+
+//The tab for searching for Mugs on the local network. Mug must be connected to a wifi AP prior to being visible here
+//This fragment returns the chosen IP to the MainActivity so that the user can connect to and control their chosen Mug
 
 public class LocalMugsTab extends Fragment {
     @Override
@@ -68,6 +79,7 @@ public class LocalMugsTab extends Fragment {
         //submit tasks into separate threads that scan for local network devices by local IP in groups of NUM_IPS_TO_CHECK
         final List< Future<List<InetAddress>> > threadResults = new ArrayList<>();
 
+        //TODO: this does not start every single thread at the same time, the last two threads are executed sequentially. Find out why so that this can be sped up
         for(int startIpNum = 1; startIpNum < 255; startIpNum+=NUM_IPS_TO_CHECK) {
             Future< List<InetAddress> > futureReachableIPSubgroup = deviceScanThreadPool.submit(new PingCallable(NUM_IPS_TO_CHECK, startIpNum, context, getActivity()));
             threadResults.add(futureReachableIPSubgroup);
@@ -103,24 +115,38 @@ public class LocalMugsTab extends Fragment {
         });
     }
 
-    public void connectToDevice() {
-        //get device name and IP from device list layout
-        //send HTTP GET Request that asks if device is free and if it is password protected
-        //if device is not free, display error message stating device has a user associated with it and return
-        //if device is not password protected, return the IP address and name of the mug to the MainActivity for interaction
-        //if device is password protected, show dialog box requesting password from user and send an HTTP Request for verification with the mug
-        //if incorrect password, show error dialog and return
-        //if correct, return the IP address and name of the mug to MainActivity for interaction
-    }
-
     private void renderDeviceList() {
+        deviceListLayout.removeAllViews();
         if(deviceList.isEmpty()) {
             Toast.makeText(context, "No devices found on this network!", Toast.LENGTH_SHORT).show();
         }
         for(InetAddress device : deviceList) {
-            Log.e("Device", device.getHostAddress());
-            Toast.makeText(context, "Device: " + device.getHostAddress(), Toast.LENGTH_SHORT).show();
+            LayoutInflater layoutInflater = (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            LinearLayout deviceListMember = (LinearLayout) layoutInflater.inflate(R.layout.connect_tab_member_mug_selection, null);
+            deviceListLayout.addView(deviceListMember);
+
+            TextView deviceListMemberId = deviceListMember.findViewById(R.id.id);
+            deviceListMemberId.setText(device.getHostAddress());
+
+            Button connectButton = deviceListMember.findViewById(R.id.connectButton);
+            connectButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ViewGroup deviceView = (ViewGroup) v.getParent();
+                    TextView IPView = deviceView.findViewById(R.id.id);
+                    selectedIP = IPView.getText().toString();
+                    returnActivityResult();
+                }
+            });
         }
+    }
+
+    public void returnActivityResult() {
+        Toast.makeText(context, selectedIP + " selected", Toast.LENGTH_LONG).show();
+        Intent returnData = new Intent();
+        returnData.putExtra("result_ip", selectedIP);
+        getActivity().setResult(Activity.RESULT_OK, returnData);
+        getActivity().finish();
     }
 
     private final int MAX_THREADS = 300;
@@ -129,6 +155,7 @@ public class LocalMugsTab extends Fragment {
     private Context context;
     private List<InetAddress> deviceList;
     private ThreadPoolExecutor deviceScanThreadPool;
+    private String selectedIP;
 
     private LinearLayout deviceListLayout;
 }

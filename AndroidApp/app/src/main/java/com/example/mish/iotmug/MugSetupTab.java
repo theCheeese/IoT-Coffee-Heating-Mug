@@ -6,23 +6,15 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
-import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.os.AsyncTask;
-import android.os.Build;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.PermissionChecker;
-import android.text.Layout;
 import android.util.Log;
-import android.util.Xml;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,19 +24,13 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.xmlpull.v1.XmlPullParser;
-
-import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
-import java.util.Timer;
 
-//TODO: filter SSIDs of the available access points to only Mugs
 //TODO: develop setup dialog/page
 //TODO: develop error dialogs for denied app permissions
 
-//ISSUE: Many Dialog boxes are possible. Create a way to check if a dialog is open, and then close it if a new one is requested
+//ISSUE: Duplicate Dialog boxes are currently possible. Create a way to check if a dialog is open, and then close it if a new one is requested
 
 public class MugSetupTab extends Fragment {
 
@@ -121,10 +107,10 @@ public class MugSetupTab extends Fragment {
 
         for(ScanResult wifiConfig : wifiScanList) {
             LayoutInflater layoutInflater = (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            LinearLayout wifiListMember = (LinearLayout) layoutInflater.inflate(R.layout.connect_tab_member_mug_access_point, null);
+            LinearLayout wifiListMember = (LinearLayout) layoutInflater.inflate(R.layout.connect_tab_member_mug_selection, null);
             wifiList.addView(wifiListMember);
 
-            TextView wifiListMemberSsid = wifiListMember.findViewById(R.id.ssid);
+            TextView wifiListMemberSsid = wifiListMember.findViewById(R.id.id);
             wifiListMemberSsid.setText(wifiConfig.SSID);
 
             Button connectButton = wifiListMember.findViewById(R.id.connectButton);
@@ -144,7 +130,7 @@ public class MugSetupTab extends Fragment {
 
         //get wifi ssid from the viewgroup button belongs to
         ViewGroup wifiLayout = (ViewGroup) view.getParent();
-        TextView ssidView = wifiLayout.findViewById(R.id.ssid);
+        TextView ssidView = wifiLayout.findViewById(R.id.id);
         String currentSsid = ssidView.getText().toString();
 
         //TODO: check if connection is a mug
@@ -257,6 +243,10 @@ public class MugSetupTab extends Fragment {
         WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         if(!wifiManager.isWifiEnabled())
             wifiManager.setWifiEnabled(true);
+    }
+
+    private void connectMugToAccessPoint() {
+        //TODO: create a new activity that shows a web view of the Mug's setup page so that the user can connect it to the local network
     }
 
     private Context context;

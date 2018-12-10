@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+//A callable that returns a list of IPs that are reachable on the local network
+
 public class PingCallable implements Callable<List<InetAddress>> {
     public PingCallable(int numIPsToCheck, int startIpNum, Context context, Activity currentActivity) {
         this.startIpNum = startIpNum;

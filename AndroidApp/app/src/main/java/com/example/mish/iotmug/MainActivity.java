@@ -1,6 +1,7 @@
 package com.example.mish.iotmug;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.ActivityCompat;
@@ -28,6 +29,9 @@ import java.util.Map;
 
 import static java.lang.Integer.getInteger;
 
+//The main screen for the app. Control desired temperature as well as emergency shutoffs for the Mug from here.
+//MugSetupTab accessible from here
+
 public class MainActivity extends AppCompatActivity {
 
     @Override
@@ -44,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
                 PermissionChecker.PERMISSION_DENIED) {
             //show error dialog saying the app needs internet access to function
         }
+
+        MugIP = "";
     }
 
     public void setMugTemp(View view) {
@@ -138,11 +144,6 @@ public class MainActivity extends AppCompatActivity {
         queue.add(refreshRequest);
     }
 
-    public void goToConnectScreen(View view) {
-        //Send an intent to open the connect screen for connecting to a new Mug
-        Intent connectIP=new Intent(this,ConnectTabActivity.class);
-        startActivity(connectIP);
-    }
 
     public void shutOff(View view) {
         //Send emergency shutoff signal, resettable by a button at the Mug itself for safety
@@ -183,9 +184,26 @@ public class MainActivity extends AppCompatActivity {
         return tempInt > 0 && tempInt < 70; //temperature must be between 0 and 70
     }
 
+    public void goToConnectScreen(View view) {
+        //Send an intent to open the connect screen for connecting to a new Mug
+        Intent connectTabActivityIntent = new Intent(this,ConnectTabActivity.class);
+        startActivityForResult(connectTabActivityIntent, REQUEST_CODE_IP);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == REQUEST_CODE_IP && resultCode == Activity.RESULT_OK) {
+            MugIP = "http://" + data.getStringExtra("result_ip") + ":8080";
+        }
+        else if(resultCode == Activity.RESULT_CANCELED) {
+            Toast.makeText(this, "Setup cancelled", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     public void displayError(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
-    private String MugIP = "http://192.168.1.154:8080";
+    private String MugIP;
+    private static final int REQUEST_CODE_IP = 0;
 }
