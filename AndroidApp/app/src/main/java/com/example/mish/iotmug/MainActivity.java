@@ -31,6 +31,7 @@ import static java.lang.Integer.getInteger;
 
 //The main screen for the app. Control desired temperature as well as emergency shutoffs for the Mug from here.
 //MugSetupTab accessible from here
+//TODO: REFACTOR
 
 public class MainActivity extends AppCompatActivity {
 

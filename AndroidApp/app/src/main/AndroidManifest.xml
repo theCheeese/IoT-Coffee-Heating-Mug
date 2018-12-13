@@ -27,9 +27,9 @@
         <activity
             android:name=".ConnectTabActivity"
             android:label="@string/title_activity_connect_tab"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:screenOrientation="portrait">
-        </activity>
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
+        <activity android:name=".MugServerSetupActivity"></activity>
     </application>
 
 </manifest>

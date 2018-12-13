@@ -27,8 +27,10 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
-//TODO: develop setup dialog/page
+//TODO: find a way to save the AP list after switching to another app and back
+//TODO: develop transition to MugServerSetupActivity
 //TODO: develop error dialogs for denied app permissions
+//TODO: show error on receiving password less than 8 characters in length
 
 //ISSUE: Duplicate Dialog boxes are currently possible. Create a way to check if a dialog is open, and then close it if a new one is requested
 
@@ -47,14 +49,14 @@ public class MugSetupTab extends Fragment {
         refreshButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                updateList(v);
+                updateAPList(v);
             }
         });
 
         return rootView;
     }
 
-    public void updateList(View view) {
+    public void updateAPList(View view) {
         if(ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_WIFI_STATE) !=
                 PermissionChecker.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CHANGE_WIFI_STATE) !=
@@ -77,14 +79,29 @@ public class MugSetupTab extends Fragment {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     boolean scanSuccess = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false);
-
-                    if (scanSuccess) {
-                        Log.e("scan results", "scan success");
+                    if(scanSuccess && wifiScanList != null) {
                         wifiScanList = wifiManager.getScanResults();
-                        updateWifiListLayout();                             //on scan success, update Layout
-                    } else
+
+                        wifiList.removeAllViews();
+                        for(ScanResult wifiConfig : wifiScanList) {
+                            LayoutInflater layoutInflater = (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                            LinearLayout wifiListMember = (LinearLayout) layoutInflater.inflate(R.layout.connect_tab_member_mug_selection, null);
+                            wifiList.addView(wifiListMember);
+
+                            TextView wifiListMemberSsid = wifiListMember.findViewById(R.id.id);
+                            wifiListMemberSsid.setText(wifiConfig.SSID);
+                            Button connectButton = wifiListMember.findViewById(R.id.connectButton);
+                            connectButton.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    buildWifiConfiguration(v);
+                                }
+                            });
+                        }                             //on scan success, update Layout
+                    }
+                    else {
                         Log.e("scan results", "unsuccessful scan");
-                    return;
+                    }
                 }
             };
             IntentFilter intentFilter = new IntentFilter();                     //filter intents to trigger broadcast receiver upon
@@ -100,32 +117,7 @@ public class MugSetupTab extends Fragment {
         }
     }
 
-    private void updateWifiListLayout() {
-        if(wifiScanList == null) return;
-
-        wifiList.removeAllViews();
-
-        for(ScanResult wifiConfig : wifiScanList) {
-            LayoutInflater layoutInflater = (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            LinearLayout wifiListMember = (LinearLayout) layoutInflater.inflate(R.layout.connect_tab_member_mug_selection, null);
-            wifiList.addView(wifiListMember);
-
-            TextView wifiListMemberSsid = wifiListMember.findViewById(R.id.id);
-            wifiListMemberSsid.setText(wifiConfig.SSID);
-
-            Button connectButton = wifiListMember.findViewById(R.id.connectButton);
-            connectButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    connectToMug(v);
-                }
-            });
-        }
-
-    }
-
-    public void connectToMug(View view) {
-
+    public void buildWifiConfiguration(View view) {
         checkAndEnableWifi();
 
         //get wifi ssid from the viewgroup button belongs to
@@ -143,7 +135,7 @@ public class MugSetupTab extends Fragment {
         }
 
         final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        WifiConfiguration connection = new WifiConfiguration();
+        final WifiConfiguration connection = new WifiConfiguration();
         connection.SSID = "\"" + currentSsid + "\"";
 
         //if the chosen wifi has already been configured, just connect using that
@@ -155,14 +147,12 @@ public class MugSetupTab extends Fragment {
             }
         }
 
-        Log.e("Connection", "Connection is a new configuration");
-
         //else, try to connect with a user-given password
         for(ScanResult wifiConfig : wifiScanList) {
             if(wifiConfig.SSID.equals(currentSsid)) {
                 String securityType = wifiConfig.capabilities;
                 if(securityType.contains("WPA2")) {
-                    Log.e("Connection", "WPA2 security detected");
+                    //finish building the wifi configuration
                     connection.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
                     connection.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
                     connection.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
@@ -172,62 +162,57 @@ public class MugSetupTab extends Fragment {
                     connection.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP104);
                     connection.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
                     connection.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
-                    showWPA2Dialog(connection);
-                }
-                else if(securityType.contains("Open")) {
-                    connection.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-                    int netId = wifiManager.addNetwork(connection);
-                    Log.e("Network ID open", Integer.toString(netId));
-                    wifiManager.enableNetwork(netId, true);
 
+                    //show password dialog
+                    LayoutInflater layoutInflater = getLayoutInflater();
+                    final View passwordDialogView = layoutInflater.inflate(R.layout.dialog_wifi_password, null);
+                    new AlertDialog.Builder(getActivity()).setView(passwordDialogView)
+                            .setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    EditText passwordEditText = passwordDialogView.findViewById(R.id.passwordBox);
+                                    String WPA2Key = passwordEditText.getText().toString();
+                                    connection.preSharedKey = "\"" + WPA2Key + "\"";
+                                    attemptConnection(connection);
+                                }
+                            })
+                            .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    return;
+                                }
+                            })
+                    .create()
+                    .show();
                 }
-                else {
+                else if(securityType.contains("WEP") ||
+                        securityType.contains("EAP")) {     //probably need to check for more security types
                     Log.e("Connection Info", wifiConfig.toString());
-                    Log.e("Connection", "Invalid connection encryption type (mugs are configured only for WPA2 keys)");
                     Toast.makeText(getContext(),
                             "Connection error: wrong connection encryption type (only WPA2 is used in mugs)",
                             Toast.LENGTH_SHORT).show();
+                }
+                else {
+                    connection.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+                    attemptConnection(connection);
                 }
             }
         }
     }
 
-    private void showWPA2Dialog(final WifiConfiguration connection) {
-        final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        LayoutInflater layoutInflater = getLayoutInflater();
-        final View passwordDialogView = layoutInflater.inflate(R.layout.dialog_wifi_password, null);
+    private void attemptConnection(final WifiConfiguration connection) {
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
-        dialogBuilder.setView(passwordDialogView)
-                .setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        EditText passwordEditText = passwordDialogView.findViewById(R.id.passwordBox);
-                        String WPA2Key = passwordEditText.getText().toString();
-                        connection.preSharedKey = "\"" + WPA2Key + "\"";
+        if (wifiConnectivityReceiver == null) {
+            wifiConnectivityReceiver = new WifiConnectionReceiver(context);
+        }
 
-                        int netId = wifiManager.addNetwork(connection);
-
-                        if (wifiConnectivityReceiver == null) {
-                            wifiConnectivityReceiver = new WifiConnectionReceiver(context);
-                        }
-
-                        wifiConnectivityReceiver.setSSID(connection.SSID);
-                        wifiConnectivityReceiver.setNetId(netId);
-                        context.registerReceiver(wifiConnectivityReceiver, new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION));
-                        wifiManager.enableNetwork(netId, true);
-                        Toast.makeText(context, "Connecting...", Toast.LENGTH_LONG).show();
-                    }
-                })
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        return;
-                    }
-                });
-
-        AlertDialog dialog = dialogBuilder.create();
-        dialog.show();
+        int netId = wifiManager.addNetwork(connection);
+        wifiConnectivityReceiver.setSSID(connection.SSID);
+        wifiConnectivityReceiver.setNetId(netId);
+        context.registerReceiver(wifiConnectivityReceiver, new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION));
+        wifiManager.enableNetwork(netId, true);
+        Toast.makeText(context, "Connecting...", Toast.LENGTH_LONG).show();
     }
 
     private boolean isSsidCurrentConnection(String SSID) {
@@ -245,7 +230,7 @@ public class MugSetupTab extends Fragment {
             wifiManager.setWifiEnabled(true);
     }
 
-    private void connectMugToAccessPoint() {
+    private void openMugSetupActivity() {
         //TODO: create a new activity that shows a web view of the Mug's setup page so that the user can connect it to the local network
     }
 
