@@ -104,13 +104,14 @@ public class LocalMugsTab extends Fragment {
                     Log.e("Execution Exception", e.getMessage());
                     e.printStackTrace();
                 }
-
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        renderDeviceList();
-                    }
-                });
+                if(getActivity() != null) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            renderDeviceList();
+                        }
+                    });
+                }
             }
         });
     }

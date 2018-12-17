@@ -84,6 +84,9 @@ public class MugSetupTab extends Fragment {
 
                         wifiList.removeAllViews();
                         for(ScanResult wifiConfig : wifiScanList) {
+                            if(wifiConfig.SSID.equals("")) {
+                                return; //skip hidden SSIDs
+                            }
                             LayoutInflater layoutInflater = (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                             LinearLayout wifiListMember = (LinearLayout) layoutInflater.inflate(R.layout.connect_tab_member_mug_selection, null);
                             wifiList.addView(wifiListMember);
@@ -142,7 +145,15 @@ public class MugSetupTab extends Fragment {
         List<WifiConfiguration> wifiConfigurationList = wifiManager.getConfiguredNetworks();
         for(WifiConfiguration configuredWifi : wifiConfigurationList) {
             if(configuredWifi.SSID.equals(connection.SSID)) {
+                if (wifiConnectivityReceiver == null) {
+                    wifiConnectivityReceiver = new WifiConnectionReceiver(context);
+                }
+
+                wifiConnectivityReceiver.setSSID(configuredWifi.SSID);
+                wifiConnectivityReceiver.setNetId(configuredWifi.networkId);
+                context.registerReceiver(wifiConnectivityReceiver, new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION));
                 wifiManager.enableNetwork(configuredWifi.networkId, true);
+                Toast.makeText(context, "Connecting...", Toast.LENGTH_LONG).show();
                 return;
             }
         }
@@ -172,6 +183,12 @@ public class MugSetupTab extends Fragment {
                                 public void onClick(DialogInterface dialog, int which) {
                                     EditText passwordEditText = passwordDialogView.findViewById(R.id.passwordBox);
                                     String WPA2Key = passwordEditText.getText().toString();
+                                    if(WPA2Key.length() < 8) {
+                                        Toast.makeText(context, "Password must be at least 8 characters in length",
+                                                Toast.LENGTH_SHORT).show();
+                                        return;
+                                    }
+
                                     connection.preSharedKey = "\"" + WPA2Key + "\"";
                                     attemptConnection(connection);
                                 }

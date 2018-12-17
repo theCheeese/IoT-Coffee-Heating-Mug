@@ -32,6 +32,7 @@ import static java.lang.Integer.getInteger;
 //The main screen for the app. Control desired temperature as well as emergency shutoffs for the Mug from here.
 //MugSetupTab accessible from here
 //TODO: REFACTOR
+//TODO: Instead of expecting String responses, expect JSON responses so that it is easy to extend for more potential details about state
 
 public class MainActivity extends AppCompatActivity {
 
